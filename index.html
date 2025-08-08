@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>যুলোজি অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "মানুষের মস্তিষ্কে নিউরনের সংখ্যা কত?",
+          options: {
+            a: "১০ মিলিয়ন",
+            b: "১০০ বিলিয়ন",
+            c: "১০ কোটি",
+            d: "১০ লক্ষ",
+          },
+          correct: "b",
+          explanation:
+            "<p>মানুষের মস্তিষ্কে নিউরনের সংখ্যা প্রায় <strong>১০০ বিলিয়ন (১০০,০০০,০০০,০০০)</strong>। এই বিশাল সংখ্যক নিউরন একে অপরের সাথে সংযুক্ত হয়ে জটিল নেটওয়ার্ক তৈরি করে যা আমাদের চিন্তা, অনুভূতি, চলাচল এবং অন্যান্য শারীরিক কার্যকারিতা নিয়ন্ত্রণ করে। এই সংখ্যাটি অনেক বেশি এবং মস্তিষ্কের কার্যকারিতার জন্য এটি অপরিহার্য।</p>",
+        },
+        {
+          id: 2,
+          question: "যেটি স্নায়ুতন্ত্রের সাথে সম্পর্কিত নয়?",
+          options: {
+            a: "রেটিনা",
+            b: "এপিনেফ্রিন",
+            c: "মেলানিন",
+            d: "গ্লাইসিন",
+          },
+          correct: "c",
+          explanation:
+            "<p><strong>মেলানিন (Melanin)</strong> হলো একটি রঞ্জক পদার্থ যা ত্বক, চুল এবং চোখের রঙ নির্ধারণ করে। এটি মূলত মেলানোসাইট কোষ দ্বারা উৎপাদিত হয় এবং স্নায়ুতন্ত্রের সাথে সরাসরি সম্পর্কিত নয়। অন্যদিকে, রেটিনা (Retina) চোখের একটি অংশ যা স্নায়ুতন্ত্রের মাধ্যমে মস্তিষ্কে দৃষ্টি সংকেত পাঠায়। এপিনেফ্রিন (Epinephrine) বা অ্যাড্রেনালিন একটি নিউরোট্রান্সমিটার এবং হরমোন যা স্নায়ুতন্ত্রে গুরুত্বপূর্ণ ভূমিকা পালন করে। গ্লাইসিন (Glycine) একটি অ্যামিনো অ্যাসিড যা কেন্দ্রীয় স্নায়ুতন্ত্রে একটি নিউরোট্রান্সমিটার হিসেবে কাজ করে।</p>",
+        },
+        {
+          id: 3,
+          question:
+            "কোন এনজাইম স্নায়ু উদ্দীপনা পরিবহনে গুরুত্বপূর্ণ ভূমিকা পালন করে?",
+          options: {
+            a: "অ্যাসিটাইলকোলিন এস্টারেজ",
+            b: "মেটালোপ্রোটিন কাইনেজ",
+            c: "ক্ষারীয় ফসফাটেজ",
+            d: "লাইসোজাইম",
+          },
+          correct: "a",
+          explanation:
+            "<p><strong>অ্যাসিটাইলকোলিন এস্টারেজ (Acetylcholine esterase)</strong> নামক এনজাইম স্নায়ু উদ্দীপনা পরিবহনে অত্যন্ত গুরুত্বপূর্ণ ভূমিকা পালন করে। এটি নিউরোট্রান্সমিটার অ্যাসিটাইলকোলিনকে (Acetylcholine) ভেঙে দেয়, যা সিন্যাপটিক ক্লেফটে (Synaptic cleft) অতিরিক্ত উদ্দীপনা রোধ করে এবং স্নায়ু কোষকে পরবর্তী উদ্দীপনার জন্য প্রস্তুত করে। এটি ছাড়া, অ্যাসিটাইলকোলিন স্নায়ু-পেশী সংযোগস্থলে ক্রমাগত উত্তেজনা সৃষ্টি করবে।</p>",
+        },
+        {
+          id: 4,
+          question: "স্নায়ু কোষের প্রলম্বিত অংশ কত প্রকার?",
+          options: {
+            a: "৮",
+            b: "৬",
+            c: "৪",
+            d: "২",
+          },
+          correct: "d",
+          explanation:
+            "<p>স্নায়ু কোষের (Neuron) দুটি প্রধান প্রলম্বিত অংশ রয়েছে: <strong>অ্যাক্সন (Axon) এবং ডেনড্রাইট (Dendrite)</strong>। অ্যাক্সন হলো একটি দীর্ঘ প্রলম্বন যা স্নায়ু উদ্দীপনাকে কোষদেহ থেকে দূরে সরিয়ে নিয়ে যায়, আর ডেনড্রাইট হলো ক্ষুদ্র, শাখান্বিত প্রলম্বন যা অন্যান্য নিউরন থেকে সংকেত গ্রহণ করে কোষদেহের দিকে নিয়ে আসে।</p>",
+        },
+        {
+          id: 5,
+          question: "মানব মস্তিষ্কে নিউরনের সংখ্যা কত?",
+          options: {
+            a: "১০০ মিলিয়ন",
+            b: "১০০ বিলিয়ন",
+            c: "১ বিলিয়ন",
+            d: "৫ বিলিয়ন",
+          },
+          correct: "b",
+          explanation:
+            "<p>মানুষের মস্তিষ্কে নিউরনের সংখ্যা প্রায় <strong>১০০ বিলিয়ন (১০০,০০০,০০০,০০০)</strong>। এই বিশাল সংখ্যক নিউরন একে অপরের সাথে সংযুক্ত হয়ে জটিল নেটওয়ার্ক তৈরি করে যা আমাদের চিন্তা, অনুভূতি, চলাচল এবং অন্যান্য শারীরিক কার্যকারিতা নিয়ন্ত্রণ করে।</p>",
+        },
+        {
+          id: 6,
+          question: "ভিসেরাল স্নায়ুতন্ত্র নিচের কোনটিতে সংবেদ প্রেরণ করে না?",
+          options: {
+            a: "শ্বসনতন্ত্র",
+            b: "রক্তসংবহনতন্ত্র",
+            c: "পেশি",
+            d: "জননতন্ত্র",
+          },
+          correct: "c",
+          explanation:
+            "<p>ভিসেরাল স্নায়ুতন্ত্র (Visceral nervous system), যা স্বয়ংক্রিয় স্নায়ুতন্ত্র (Autonomic nervous system) নামেও পরিচিত, দেহের অভ্যন্তরীণ অঙ্গগুলির অনৈচ্ছিক কার্যকারিতা নিয়ন্ত্রণ করে। এটি <strong>শ্বসনতন্ত্র, রক্তসংবহনতন্ত্র, জননতন্ত্র</strong> এবং পাচনতন্ত্রের মতো অঙ্গগুলিতে সংবেদ প্রেরণ করে। তবে, এটি <strong>ঐচ্ছিক পেশি (Skeletal muscle)</strong>-তে সরাসরি সংবেদ প্রেরণ করে না; ঐচ্ছিক পেশিগুলো সোমাটিক স্নায়ুতন্ত্রের (Somatic nervous system) নিয়ন্ত্রণে থাকে।</p>",
+        },
+        {
+          id: 7,
+          question: "স্নায়ুতন্ত্রের গঠনগত/কোষীয় এককের নাম কী?",
+          options: {
+            a: "নেফ্রন",
+            b: "নিউরন",
+            c: "অ্যাক্সন",
+            d: "ডেনড্রাইট",
+          },
+          correct: "b",
+          explanation:
+            "<p><strong>নিউরন (Neuron)</strong> হলো <strong>স্নায়ুতন্ত্রের গঠনগত এবং কার্যগত মৌলিক একক</strong>। এটি বৈদ্যুতিক এবং রাসায়নিক সংকেত পরিবহন করে দেহের বিভিন্ন অংশে তথ্য আদান-প্রদান করে। নেফ্রন হলো বৃক্কের একক, এবং অ্যাক্সন ও ডেনড্রাইট হলো নিউরনের অংশ।</p>",
+        },
+        {
+          id: 8,
+          question: "র‍্যানভিয়ারের নোড কোথায় পাওয়া যায়?",
+          options: {
+            a: "নিউরন",
+            b: "নেফ্রন",
+            c: "স্পার্ম",
+            d: "কন্ড্রোসাইট",
+          },
+          correct: "a",
+          explanation:
+            "<p><strong>র‍্যানভিয়ারের নোড (Nodes of Ranvier)</strong> হলো অ্যাক্সনের মায়োলিন আবরণের (Myelin sheath) অনাবৃত ছোট ছোট ফাঁকা স্থান। এই নোডগুলো <strong>নিউরনে</strong> পাওয়া যায় এবং এরা স্নায়ু উদ্দীপনার দ্রুত পরিবহনে (Saltatory conduction) গুরুত্বপূর্ণ ভূমিকা পালন করে। নেফ্রন বৃক্কের একক, স্পার্ম হলো শুক্রাণু এবং কন্ড্রোসাইট হলো তরুণাস্থির কোষ।</p>",
+        },
+        {
+          id: 9,
+          question: "T আকৃতির গঠন বিশিষ্ট নিউরন কোথায় পাওয়া যায়?",
+          options: {
+            a: "চোখের রেটিনাতে",
+            b: "অন্তকর্ণে",
+            c: "স্পাইনাল কর্ডে",
+            d: "মস্তিষ্কে",
+          },
+          correct: "c",
+          explanation:
+            "<p>T আকৃতির গঠন বিশিষ্ট নিউরনকে <strong>সিউডোউনিপোলার নিউরন (Pseudounipolar neuron)</strong> বলা হয়। এই ধরনের নিউরন সাধারণত <strong>স্পাইনাল কর্ডের (Spinal cord)</strong> ডরসাল রুট গ্যাংলিয়াতে (Dorsal root ganglia) পাওয়া যায়। এই নিউরনগুলি শরীরের বিভিন্ন অংশ থেকে সংবেদনশীল তথ্য কেন্দ্রীয় স্নায়ুতন্ত্রে নিয়ে যায়।</p>",
+        },
+        {
+          id: 10,
+          question: "সিন্যাপটিক ক্লেফট এর ফাঁক কত?",
+          options: {
+            a: "২০ ন্যানোমিটার",
+            b: "২০০ ন্যানোমিটার",
+            c: "১০ ন্যানোমিটার",
+            d: "১০০ ন্যানোমিটার",
+          },
+          correct: "a",
+          explanation:
+            "<p><strong>সিন্যাপটিক ক্লেফট (Synaptic cleft)</strong> হলো দুটি নিউরনের (প্রিসিন্যাপটিক এবং পোস্টসিন্যাপটিক নিউরন) সংযোগস্থলের মধ্যবর্তী ক্ষুদ্র ফাঁকা স্থান। এই ফাঁকের আকার প্রায় <strong>২০ ন্যানোমিটার (nm)</strong>। নিউরোট্রান্সমিটার (Neurotransmitter) এই ফাঁক অতিক্রম করে এক নিউরন থেকে অন্য নিউরনে সংকেত প্রেরণ করে।</p>",
+        },
+        {
+          id: 11,
+          question: "স্নায়ু উদ্দীপনার গতি কত?",
+          options: {
+            a: "১০০০ মিটার/সেকেন্ডে",
+            b: "১০০ মিটার/সেকেন্ডে",
+            c: "২০০০ মিটার/সেকেন্ডে",
+            d: "১০ মিটার/সেকেন্ডে",
+          },
+          correct: "b",
+          explanation:
+            "<p>স্নায়ু উদ্দীপনার গতি, বিশেষ করে মায়োলিনযুক্ত নিউরনে (myelinated neurons), বেশ দ্রুত হয়। মানবদেহে স্নায়ু উদ্দীপনার গতি প্রতি সেকেন্ডে <strong>১০০ মিটার (১০০ মি/সেকেন্ড)</strong> বা তার বেশি হতে পারে, যা কিছু ক্ষেত্রে ১২০ মি/সেকেন্ড পর্যন্ত পৌঁছাতে পারে। এই দ্রুত গতি সংকেতগুলির কার্যকর পরিবহনের জন্য অপরিহার্য।</p>",
+        },
+        {
+          id: 12,
+          question:
+            "সিন্যাপসের মাধ্যমে স্নায়ু উদ্দীপনা প্রেরণের সময় কোন এনজাইম ব্যবহৃত হয়?",
+          options: {
+            a: "Transferase",
+            b: "Synthetase",
+            c: "Isomerase",
+            d: "ATPase",
+          },
+          correct: "d",
+          explanation:
+            "<p>সিন্যাপসের (Synapse) মাধ্যমে স্নায়ু উদ্দীপনা প্রেরণের সময় নিউরোট্রান্সমিটারের রিলিজ এবং রিসিভারের সক্রিয়তার জন্য শক্তি প্রয়োজন হয়। এই শক্তি ATP (Adenosine Triphosphate) থেকে আসে, এবং ATP ভেঙে ADP (Adenosine Diphosphate) তৈরি করার জন্য <strong>ATPase (Adenosine Triphosphatase)</strong> এনজাইম ব্যবহৃত হয়। ATPase এনজাইম আয়ন পাম্পের (ion pump) কার্যকারিতাতেও গুরুত্বপূর্ণ, যা অ্যাকশন পটেনশিয়াল (action potential) বজায় রাখতে সাহায্য করে।</p>",
+        },
+        {
+          id: 13,
+          question: "মানুষের সুষুম্না স্নায়ুর সংখ্যা কত জোড়া?",
+          options: {
+            a: "৩০",
+            b: "৩১",
+            c: "৩২",
+            d: "৩৩",
+          },
+          correct: "b",
+          explanation:
+            "<p>মানুষের সুষুম্না স্নায়ু (Spinal nerves) হলো সেই স্নায়ুগুলো যা সুষুম্নাকাণ্ড (Spinal cord) থেকে বের হয়ে দেহের বিভিন্ন অংশে ছড়িয়ে পড়ে। মানুষের সুষুম্না স্নায়ুর সংখ্যা <strong>৩১ জোড়া</strong>। এই ৩১ জোড়া স্নায়ু শরীরের বিভিন্ন সংবেদনশীল তথ্য পরিবহন করে এবং পেশী নিয়ন্ত্রণ করে।</p>",
+        },
+        {
+          id: 14,
+          question:
+            "সিন্যাপটিক নবে কোন আয়ন প্রবেশ করলে অ্যাসিটাইল কোলিন মুক্ত হয়ে সিনাপটিক ক্লেফট এ বেরিয়ে আসে?",
+          options: {
+            a: "Ca²⁺",
+            b: "Na⁺",
+            c: "K⁺",
+            d: "Cl⁻",
+          },
+          correct: "a",
+          explanation:
+            "<p>যখন একটি অ্যাকশন পটেনশিয়াল (Action potential) সিন্যাপটিক নবে (Synaptic knob) পৌঁছায়, তখন ভোল্টেজ-গেটেড ক্যালসিয়াম চ্যানেল (Voltage-gated calcium channels) খুলে যায়। এর ফলে <strong>ক্যালসিয়াম আয়ন (Ca²⁺)</strong> সিন্যাপটিক নবের ভিতরে প্রবেশ করে। এই ক্যালসিয়াম আয়নের প্রবেশ অ্যাসিটাইলকোলিন (Acetylcholine) ধারণকারী ভেসিকলগুলোকে (Vesicles) সিন্যাপটিক নবের কোষপর্দার সাথে ফিউজ করতে এবং অ্যাসিটাইলকোলিনকে সিন্যাপটিক ক্লেফটে (Synaptic cleft) মুক্ত করতে উদ্দীপিত করে।</p>",
+        },
+        {
+          id: 15,
+          question: "নিউরনের কোষদেহকে কী বলে?",
+          options: {
+            a: "মায়োলিন শিখ",
+            b: "র‍্যানভিয়ারের পর্ব",
+            c: "সিন্যাপটিক নব",
+            d: "নিউরোসাইটন",
+          },
+          correct: "d",
+          explanation:
+            "<p>নিউরনের (Neuron) <strong>কোষদেহকে নিউরোসাইটন (Neurocyte) বা সোমা (Soma)</strong> বলা হয়। এটি নিউরনের প্রধান অংশ যেখানে নিউক্লিয়াস এবং অন্যান্য প্রধান কোষীয় অঙ্গাণুগুলো অবস্থিত থাকে। মায়োলিন শিখ অ্যাক্সনকে আবৃত করে, র‍্যানভিয়ারের পর্ব মায়োলিন শিখের ফাঁকা অংশ, এবং সিন্যাপটিক নব হলো অ্যাক্সনের শেষ প্রান্ত।</p>",
+        },
+        {
+          id: 16,
+          question: "মানবদেহের দীর্ঘতম কোষ কোনটি?",
+          options: {
+            a: "স্নায়ুকোষ",
+            b: "রক্তকোষ",
+            c: "যকৃত কোষ",
+            d: "পেশি কোষ",
+          },
+          correct: "a",
+          explanation:
+            "<p>মানবদেহের দীর্ঘতম কোষ হলো <strong>স্নায়ুকোষ (Neuron)</strong>, বিশেষ করে কিছু নিউরন যা সুষুম্নাকাণ্ড থেকে পায়ের আঙুল পর্যন্ত বিস্তৃত হতে পারে। তাদের অ্যাক্সন দীর্ঘ হওয়ায় এই কোষগুলো দীর্ঘতম হয়।</p>",
+        },
+        {
+          id: 17,
+          question:
+            "কোন ধরনের কোষের অস্বাভাবিক বিভাজনের ফলে মস্তিষ্কে টিউমার সৃষ্টি হয়?",
+          options: {
+            a: "নিউরন",
+            b: "অ্যাস্ট্রোসাইট",
+            c: "অলিগোডেনড্রোসাইট",
+            d: "মাইক্রোগ্লিয়া",
+          },
+          correct: "b",
+          explanation:
+            "<p>মস্তিষ্কে টিউমার (Brain tumor) সাধারণত <strong>গ্লিয়াল কোষের (Glial cells)</strong> অস্বাভাবিক বিভাজনের ফলে সৃষ্টি হয়, নিউরনের নয়। নিউরনগুলো সাধারণত বিভাজিত হয় না। গ্লিয়াল কোষের মধ্যে <strong>অ্যাস্ট্রোসাইট (Astrocyte)</strong> হলো এক ধরনের গ্লিয়াল কোষ এবং এদের অস্বাভাবিক বিভাজনের ফলে যে টিউমার হয় তাকে অ্যাস্ট্রোসাইটোমা (Astrocytoma) বলা হয়, যা মস্তিষ্কের সবচেয়ে সাধারণ টিউমারগুলির মধ্যে অন্যতম। অলিগোডেনড্রোসাইট এবং মাইক্রোগ্লিয়াও গ্লিয়াল কোষ, এবং তারাও টিউমার সৃষ্টি করতে পারে, তবে অ্যাস্ট্রোসাইটজনিত টিউমার বেশি প্রচলিত।</p>",
+        },
+        {
+          id: 18,
+          question: "নিচের কোনটি জৈব অ্যামিন ধরনের নিউরোট্রান্সমিটার?",
+          options: {
+            a: "গ্লাইসিন",
+            b: "এন্ডোরফিন",
+            c: "ডোপামিন",
+            d: "সোমাটোস্টেটিন",
+          },
+          correct: "c",
+          explanation:
+            "<p><strong>ডোপামিন (Dopamine)</strong> হলো একটি <strong>জৈব অ্যামিন (Biogenic amine) ধরনের নিউরোট্রান্সমিটার</strong>। এটি মস্তিষ্কের পুরস্কার ব্যবস্থা, গতি নিয়ন্ত্রণ এবং মেজাজ নিয়ন্ত্রণের মতো গুরুত্বপূর্ণ কার্যকলাপে জড়িত। গ্লাইসিন হলো একটি অ্যামিনো অ্যাসিড নিউরোট্রান্সমিটার, এন্ডোরফিন হলো পেপটাইড নিউরোট্রান্সমিটার, এবং সোমাটোস্টেটিনও একটি পেপটাইড হরমোন ও নিউরোট্রান্সমিটার।</p>",
+        },
+        {
+          id: 19,
+          question: "নিচের কোনটি স্নায়ুর প্রেরক?",
+          options: {
+            a: "প্লাজমা প্রোটিন",
+            b: "ইনসুলিন",
+            c: "গ্লুকাগন",
+            d: "অ্যাসিটাইলকোলিন",
+          },
+          correct: "d",
+          explanation:
+            "<p><strong>অ্যাসিটাইলকোলিন (Acetylcholine)</strong> হলো একটি প্রধান <strong>নিউরোট্রান্সমিটার বা স্নায়ুর প্রেরক</strong>। এটি স্নায়ু কোষের মধ্যে এবং স্নায়ু ও পেশি কোষের মধ্যে সংকেত প্রেরণে গুরুত্বপূর্ণ ভূমিকা পালন করে। এটি পেশি সংকোচন, স্মৃতি এবং শেখার মতো বিভিন্ন জৈবিক প্রক্রিয়ায় জড়িত। প্লাজমা প্রোটিন, ইনসুলিন এবং গ্লুকাগন হলো হরমোন বা রক্তে অবস্থিত প্রোটিন, যারা সরাসরি স্নায়ুর প্রেরক হিসেবে কাজ করে না।</p>",
+        },
+        {
+          id: 20,
+          question: "দুটি স্নায়ুকোষের মিলনস্থলকে কী বলে?",
+          options: {
+            a: "অ্যাক্সন",
+            b: "ডেনড্রাইট",
+            c: "সিন্যাপস",
+            d: "কোষদেহ",
+          },
+          correct: "c",
+          explanation:
+            "<p>দুটি স্নায়ুকোষের (Neuron) মিলনস্থলকে <strong>সিন্যাপস (Synapse)</strong> বলে। সিন্যাপসের মাধ্যমে একটি নিউরন থেকে অন্য নিউরনে বৈদ্যুতিক বা রাসায়নিক সংকেত পরিবাহিত হয়। অ্যাক্সন এবং ডেনড্রাইট হলো নিউরনের অংশ, এবং কোষদেহ হলো নিউরনের মূল অংশ।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                            <label class="option" data-option="${option}">
+                              <div class="circle">${option}</div>
+                              <span class="option-text">${question.options[option]}</span>
+                            </label>
+                          `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                               <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                               <div class="explanation-content">
+                                 <div class="explanation-label">ব্যাখ্যা:</div>
+                                 ${question.explanation}
+                               </div>
+                             </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                          <p class="question-label">${index + 1}. ${
+            question.question
+          }</p>
+                          <div class="options">
+                            ${optionsHTML}
+                          </div>
+                          ${explanationHTML}
+                        `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
